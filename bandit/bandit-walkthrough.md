@@ -129,5 +129,3 @@ echo MU4VWeTyJk8ROof1qqmcBPaLh7lDCPvS | nc localhost 30000
 ```
 
 ---
-
-Feel free to improve or clean it further for GitHub — but this is ready to drop into your `writeups-ctf` repo!
