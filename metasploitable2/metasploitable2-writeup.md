@@ -1,6 +1,16 @@
 
 # 💥 Metasploitable2 - Full Exploitation Writeup
 
+> ⚠️ **Disclaimer**
+>
+> This report documents activities performed in a **controlled, legal lab environment** using intentionally vulnerable machines (e.g., Metasploitable2, HackTheBox).
+>
+> All tests and exploits were executed on systems I own or have explicit permission to interact with.
+>
+> **Never perform security testing or exploitation on systems you do not own or have written permission to assess.**
+>
+> Unauthorized access is illegal and unethical. This content is intended strictly for educational and lawful purposes only.
+
 ## 📌 Target Info
 - **IP:** 192.168.11.252
 - **OS:** Linux (Ubuntu)
